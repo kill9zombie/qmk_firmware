@@ -18,13 +18,22 @@
 #include "action_layer.h"
 
 enum custom_keycodes {
-    PH_LAYER1 = SAFE_RANGE
-    PH_LAYER2
+    M_LAYER1 = SAFE_RANGE
+    M_LAYER2
+    M_CAPS
+    TMUX_1
+    TMUX_2
+    TMUX_3
+    TMUX_4
+    TMUX_5
 };
 
 // Fillers to make layering more clear
 #define _______ KC_TRNS
 #define XXXXXXX KC_NO
+
+// To keep track of the state of caps lock
+bool capslock_enabled;
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
@@ -42,26 +51,30 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |Layer1|   `  | Alt  | Del  | Esc  |    Space    |Enter |Bksp  |   \  |   =  |Layer2|
  * `-----------------------------------------------------------------------------------'
  *
- * [ - Left GUI when held, [ when tapped
+ * Mod Tap keys:
+ *
+ * [ - CTRL + shift when held, [ when tapped
+ * ` - Left GUI when held, ` when tapped
+ * \ - CTRL when held, \ when tapped
  *
  */
 [0] = {
-  {GUI_T(KC_LBRC), KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_RBRC},
-  {KC_TAB,         KC_QUOT, KC_COMM, KC_DOT,  KC_P,    KC_Y,    KC_F,    KC_G,    KC_C,    KC_R,    KC_L,    KC_SLSH},
-  {KC_CTRL,        KC_A,    KC_O,    KC_E,    KC_U,    KC_I,    KC_D,    KC_H,    KC_T,    KC_N,    KC_S,    KC_MINS},
-  {KC_LSFT,        KC_SCLN, KC_Q,    KC_J,    KC_K,    KC_X,    KC_B,    KC_M,    KC_W,    KC_V,    KC_Z,    KC_RSFT },
-  {PH_LAYER1,      KC_LCTL, KC_LALT, KC_ESC, KC_BSPC,   KC_SPC,  KC_SPC,  KC_ENT,   KC_LEFT, KC_DOWN, KC_UP,   PH_LAYER2}
+  {MT(MOD_LCTL | MOD_LSFT, KC_LBRC),  KC_1,    KC_2,    KC_3,    KC_4,    KC_5,    KC_6,    KC_7,    KC_8,    KC_9,    KC_0,    KC_RBRC},
+  {KC_TAB,   KC_QUOT, KC_COMM, KC_DOT,  KC_P,    KC_Y,    KC_F,    KC_G,    KC_C,    KC_R,    KC_L,    KC_SLSH},
+  {KC_CTRL,  KC_A,    KC_O,    KC_E,    KC_U,    KC_I,    KC_D,    KC_H,    KC_T,    KC_N,    KC_S,    KC_MINS},
+  {KC_LSFT,  KC_SCLN, KC_Q,    KC_J,    KC_K,    KC_X,    KC_B,    KC_M,    KC_W,    KC_V,    KC_Z,    KC_RSFT },
+  {M_LAYER1, GUI_T(KC_GRV),  KC_LALT, KC_DEL,  KC_ESC,  KC_SPC,  KC_SPC,  KC_ENT,  KC_BSPC, CTL_T(KC_BSLS), KC_EQL,   M_LAYER2}
 },
 
 /* Right hand layer 1
  * ,-----------------------------------------------------------------------------------.
- * |   `  |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |  F7  |  F8  |  F9  | F10  |vol + |
+ * |   `  |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |  F7  |  F8  |  F9  | F10  | CAPS |
  * |------+------+------+------+------+------+------+------+------+------+------+------|
- * | Tab  |      |      |      |      |      |tmux p|      |  up  |      |tmux n|Vol - |
+ * | Tab  |      |      |      |      |      |      |      |  up  |      |      |  /   |
  * |------+------+------+------+------+-------------+------+------+------+------+------|
- * | Ctrl |      |      |      |      |      |      | left | down | right|      | next |
+ * | Ctrl |      |      |      |      |      |      | left | down | right|      |  |   |
  * |------+------+------+------+------+------|------+------+------+------+------+------|
- * | Shift|      |      |      |      |      |      |      |      |      |      | play |
+ * | Shift|      |      |      |      |  x   |      |      |      |      |      | Shift|
  * |------+------+------+------+------+------+------+------+------+------+------+------|
  * |Layer1| GUI  | Alt  | Del  | Esc  |    Space    |Enter |Bksp  |      |      |Layer2|
  * `-----------------------------------------------------------------------------------'
@@ -69,18 +82,18 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *
  */
 [1] = {
-  {KC_TILD, KC_F1, KC_F2,   KC_F3, KC_F4,  KC_F5, KC_F6, KC_F7, KC_F8, KC_F9, KC_F10, KC_BSPC},
-  {_______, XXXXXXX, XXXXXXX,   XXXXXXX, XXXXXXX,  XXXXXXX, KC_CIRC, XXXXXXX, KC_ASTR, KC_LPRN, KC_RPRN, KC_DEL},
-  {KC_DEL,  XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   KC_F6,   KC_UNDS, KC_PLUS, KC_LCBR, KC_RCBR, KC_PIPE},
-  {_______, XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,  XXXXXXX,  XXXXXXX,S(KC_NUHS),S(KC_NUBS),KC_HOME, KC_END, _______},
-  {_______, _______, _______, _______, _______, _______, _______, _______, KC_MNXT, KC_VOLD, KC_VOLU, KC_MPLY}
+  {KC_GRV,  KC_F1,   KC_F2,    KC_F3,   KC_F4,    KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,    KC_F10,  M_CAPS},
+  {_______, XXXXXXX, XXXXXXX,  XXXXXXX, XXXXXXX,  XXXXXXX, XXXXXXX, XXXXXXX, KC_UP,   XXXXXXX,  XXXXXXX, _______},
+  {_______, XXXXXXX, XXXXXXX,  XXXXXXX, XXXXXXX,  XXXXXXX, XXXXXXX, KC_LEFT, KC_DOWN, KC_RIGHT, XXXXXXX, KC_PIPE},
+  {_______, XXXXXXX, XXXXXXX,  XXXXXXX, _______,  XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX,  XXXXXXX, _______},
+  {_______, KC_LGUI, _______,  _______, _______,  _______, _______, _______, _______, XXXXXXX,  XXXXXXX, _______}
 },
 
 /* Left hand layer 2
  * ,-----------------------------------------------------------------------------------.
- * |      |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |  F7  |  F8  |  F9  | F10  |RESET |
+ * |      |tmux 1|tmux 2|tmux 3|tmux 4|tmux 5|      |      |m acc1|m acc2|m acc0|      |
  * |------+------+------+------+------+------+------+------+------+------+------+------|
- * | Tab  |      |      | m up |      |      |      |      |      |      |      |      |
+ * | Tab  |      |      | m up |      |      |      |      |      |      |      |RESET |
  * |------+------+------+------+------+-------------+------+------+------+------+------|
  * | Ctrl |      |m left|m down|m righ|scrl u|      |      |      |      |      |      |
  * |------+------+------+------+------+------|------+------+------+------+------+------|
@@ -92,79 +105,117 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  *
  */
 [2] = {
-  {XXXXXXX, KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10, RESET},
-  {KC_GRV,  XXXXXXX,    XXXXXXX,    KC_3,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX},
-  {KC_GRV,  XXXXXXX,    KC_2,    KC_3,    KC_4,    KC_5,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX,    XXXXXXX},
-  {KC_DEL,  XXXXXXX,   XXXXXXX,   XXXXXXX,   XXXXXXX,   KC_F5,   KC_F6,   KC_MINS, KC_EQL,  KC_LBRC, KC_RBRC, KC_BSLS},
-  {_______, KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12,  KC_NUHS, KC_NUBS, KC_PGUP, KC_PGDN, _______},
-  {_______, _______, _______, _______, _______, _______, _______, _______, KC_MNXT, KC_VOLD, KC_VOLU, KC_MPLY}
-},
-
-/* Adjust (Lower + Raise)
- * ,-----------------------------------------------------------------------------------.
- * |  F1  |  F2  |  F3  |  F4  |  F5  |  F6  |  F7  |  F8  |  F9  |  F10 |  F11 |  F12 |
- * |------+------+------+------+------+------+------+------+------+------+------+------|
- * |      | Reset|      |      |      |      |      |      |      |      |      |  Del |
- * |------+------+------+------+------+-------------+------+------+------+------+------|
- * |      |      |      |Aud on|AudOff|AGnorm|AGswap|Qwerty|Colemk|Dvorak|      |      |
- * |------+------+------+------+------+------|------+------+------+------+------+------|
- * |      |Voice-|Voice+|Mus on|MusOff|MidiOn|MidOff|      |      |      |      |      |
- * |------+------+------+------+------+------+------+------+------+------+------+------|
- * |      |      |      |      |      |             |      |      |      |      |      |
- * `-----------------------------------------------------------------------------------'
- */
-[_ADJUST] = {
-  {KC_F1,   KC_F2,   KC_F3,   KC_F4,   KC_F5,   KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F11,  KC_F12},
-  {_______, RESET,   DEBUG,   _______, _______, _______, _______, TERM_ON, TERM_OFF,_______, _______, KC_DEL},
-  {_______, _______, MU_MOD,  AU_ON,   AU_OFF,  AG_NORM, AG_SWAP, QWERTY,  COLEMAK, DVORAK,  _______, _______},
-  {_______, MUV_DE,  MUV_IN,  MU_ON,   MU_OFF,  MI_ON,   MI_OFF,  _______, _______, _______, _______, _______},
-  {_______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______, _______}
+  {XXXXXXX, TMUX_1,  TMUX_2,  TMUX_3,  TMUX_4,  TMUX_5,  XXXXXXX, XXXXXXX, KC_ACL1, KC_ACL2, KC_ACL0, XXXXXXX},
+  {_______, XXXXXXX, XXXXXXX, KC_MS_U, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, RESET},
+  {_______, XXXXXXX, KC_MS_L, KC_MS_D, KC_MS_R, KC_WH_U, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX},
+  {_______, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, KC_WH_D, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX, XXXXXXX},
+  {_______, KC_LGUI, _______, KC_PSCR, _______, KC_BTN1, KC_BTN1, KC_BTN2, _______, _______, XXXXXXX, _______}
 }
 
 
 };
 
+
+void matrix_init_user(void) {
+  capslock_enabled = false;
+}
+
+
+/*
+ * MACROS:
+ *
+ * M_LAYER1 - set backlight level 1 and momentary layer 1
+ * M_LAYER2 - set backlight level 2 and momentary layer 2
+ *
+ * M_CAPS - set backlight level 3 and enable caps lock
+ *
+ * TMUX_1 - send CTRL+B 1
+ * TMUX_2 - send CTRL+B 2
+ * TMUX_3
+ * TMUX_4
+ * TMUX_5
+ *
+ */
+
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   switch (keycode) {
-        case PH_LAYER1:
-          if (record->event.pressed) {
-            #ifdef BACKLIGHT_ENABLE
-              backlight_set(1);
-            #endif
-            layer_on(1);
-            // update_tri_layer(_LOWER, _RAISE, _ADJUST);
-          } else {
-            #ifdef BACKLIGHT_ENABLE
-              backlight_set(0);
-            #endif
-            layer_off(1);
-            // update_tri_layer(_LOWER, _RAISE, _ADJUST);
-          }
-          return false;
-          break;
-        case PH_LAYER2:
-          if (record->event.pressed) {
-            layer_on(_RAISE);
-            update_tri_layer(_LOWER, _RAISE, _ADJUST);
-          } else {
-            layer_off(_RAISE);
-            update_tri_layer(_LOWER, _RAISE, _ADJUST);
-          }
-          return false;
-          break;
-        case BACKLIT:
-          if (record->event.pressed) {
-            register_code(KC_RSFT);
-            #ifdef BACKLIGHT_ENABLE
-              backlight_step();
-            #endif
-            PORTE &= ~(1<<6);
-          } else {
-            unregister_code(KC_RSFT);
-            PORTE |= (1<<6);
-          }
-          return false;
-          break;
+    case M_LAYER1:
+      if (record->event.pressed) {
+        #ifdef BACKLIGHT_ENABLE
+          backlight_set(1);
+        #endif
+        layer_on(1);
+        // update_tri_layer(_LOWER, _RAISE, _ADJUST);
+      } else {
+        #ifdef BACKLIGHT_ENABLE
+          backlight_set(0);
+        #endif
+        layer_off(1);
+        // update_tri_layer(_LOWER, _RAISE, _ADJUST);
       }
+      return false;
+      break;
+    case M_LAYER2:
+      if (record->event.pressed) {
+        #ifdef BACKLIGHT_ENABLE
+          backlight_set(2);
+        #endif
+        layer_on(2);
+        // update_tri_layer(_LOWER, _RAISE, _ADJUST);
+      } else {
+        #ifdef BACKLIGHT_ENABLE
+          backlight_set(0);
+        #endif
+        layer_off(2);
+        // update_tri_layer(_LOWER, _RAISE, _ADJUST);
+      }
+      return false;
+      break;
+    case M_CAPS:
+      if (record->event.pressed) {
+        SEND_STRING(SS_TAP(X_LCAP));
+        capslock_enabled = !capslock_enabled;
+        #ifdef BACKLIGHT_ENABLE
+          if (capslock_enabled) {
+            backlight_set(3);
+          } else {
+            backlight_set(0);
+          }
+        #endif
+      }
+      return false;
+      break;
+    case TMUX_1:
+      if (record->event.pressed) {
+        SEND_STRING(SS_LCTRL("b")"1");
+      }
+      return false;
+      break;
+    case TMUX_2:
+      if (record->event.pressed) {
+        SEND_STRING(SS_LCTRL("b")"2");
+      }
+      return false;
+      break;
+    case TMUX_3:
+      if (record->event.pressed) {
+        SEND_STRING(SS_LCTRL("b")"3");
+      }
+      return false;
+      break;
+    case TMUX_4:
+      if (record->event.pressed) {
+        SEND_STRING(SS_LCTRL("b")"4");
+      }
+      return false;
+      break;
+    case TMUX_5:
+      if (record->event.pressed) {
+        SEND_STRING(SS_LCTRL("b")"5");
+      }
+      return false;
+      break;
+    }
     return true;
 };
